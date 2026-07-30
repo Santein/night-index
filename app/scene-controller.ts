@@ -4,7 +4,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import type { StoryFlags, StoryPage } from "./story";
+import { INITIAL_FLAGS, type StoryFlags, type StoryPage } from "./story";
 import {
   drawBootScreen,
   drawMissingPage,
@@ -311,15 +311,7 @@ export class TeletextScene {
   private choiceRegions: ChoiceRegion[] = [];
 
   private currentPage: StoryPage | null = null;
-  private flags: StoryFlags = {
-    rememberedMara: false,
-    markedPattern: false,
-    foundKey: false,
-    keptConfession: false,
-    madePromise: false,
-    acceptedMara: false,
-    becameWitness: false,
-  };
+  private flags: StoryFlags = { ...INITIAL_FLAGS };
   private mode: ScreenMode = "boot";
   private requestedPage = "";
   private modeStartedAt = performance.now();
@@ -330,7 +322,7 @@ export class TeletextScene {
   private lastModePhase = -1;
   private lastClockSecond = -1;
   private drawState: TeletextDrawState = {
-    selectedChoice: 0,
+    selectedChoice: -1,
     hoveredChoice: null,
     revealed: false,
     hold: false,
@@ -464,8 +456,8 @@ export class TeletextScene {
     this.drawState.entry = "";
     this.drawState.hoveredChoice = null;
     this.drawState.selectedChoice = Math.min(
-      this.drawState.selectedChoice,
-      Math.max(0, page.choices.length - 1),
+      Math.max(-1, this.drawState.selectedChoice),
+      page.choices.length - 1,
     );
     this.currentEffect = page.effect;
     this.effectStartedAt = performance.now();
@@ -491,7 +483,7 @@ export class TeletextScene {
   }
 
   setSelection(index: number) {
-    this.drawState.selectedChoice = Math.max(0, index);
+    this.drawState.selectedChoice = Math.max(-1, index);
     this.dirty = true;
   }
 

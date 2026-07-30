@@ -27,6 +27,10 @@ Avoid explicit gore, frequent jumpscares, generic haunted-house imagery, VHS-fil
 - Page numbers are both navigation and narrative evidence.
 - Choices leave traces across branches so the story feels intertwined rather than reset between pages.
 - The room reacts to the signal, turning interface state into environmental storytelling.
+- Every poetic page includes one literal anchor: what happened, what the player can do, and why it matters.
+- Important decisions state their known cost, require deliberate confirmation, and produce an immediate consequence.
+- Hidden pages are explicitly signposted. Manual tuning should feel intentional, never like guessing.
+- The case-notes page distinguishes evidence, access, and personal commitments, then recommends a concrete next page.
 
 ## Accessibility & Inclusion
 

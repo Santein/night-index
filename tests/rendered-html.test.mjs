@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
+import ts from "typescript";
 
 const projectRoot = new URL("../", import.meta.url);
 
@@ -60,6 +61,7 @@ test("ships the story, receiver, and licensed local assets", async () => {
   assert.match(game, /Reduced motion/);
   assert.match(game, /Reduced flashing/);
   assert.match(game, /readStoredEndings/);
+  assert.match(game, /Choose and confirm this ending on page 160/);
   assert.match(story, /quiet-morning/);
   assert.match(story, /borrowed-dawn/);
   assert.match(story, /night-editor/);
@@ -87,4 +89,98 @@ test("ships the story, receiver, and licensed local assets", async () => {
   ]);
 
   assert.ok(projectRoot);
+});
+
+test("keeps every story page and ending reachable without broken links", async () => {
+  const source = await readFile(
+    new URL("../app/story.ts", import.meta.url),
+    "utf8",
+  );
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  const story = await import(
+    `data:text/javascript;base64,${Buffer.from(output).toString("base64")}`
+  );
+
+  const flagNames = Object.keys(story.INITIAL_FLAGS);
+  const receiptRequirements = {
+    134: "rememberedMara",
+    135: "forgotMara",
+    142: "madePromise",
+    143: "refusedPromise",
+    152: "acceptedMara",
+    153: "rejectedMara",
+  };
+  for (const [page, requiredFlag] of Object.entries(receiptRequirements)) {
+    assert.ok(
+      story.PAGE_REQUIREMENTS[page]?.includes(requiredFlag),
+      `receipt page ${page} should require ${requiredFlag}`,
+    );
+  }
+  for (const page of [200, 201, 202, 203]) {
+    assert.ok(
+      story.PAGE_REQUIREMENTS[page]?.includes("reviewedFinal"),
+      `ending page ${page} should require the final broadcast`,
+    );
+  }
+  const pageNumbers = [
+    ...source.matchAll(/case (\d+):/g),
+  ].map((match) => Number(match[1]));
+  const queue = [
+    {
+      page: 100,
+      flags: { ...story.INITIAL_FLAGS },
+    },
+  ];
+  const seen = new Set();
+  const reachablePages = new Set();
+  const reachedEndings = new Set();
+  const brokenLinks = [];
+
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const node = queue[cursor];
+    const key = `${node.page}|${flagNames
+      .map((name) => (node.flags[name] ? "1" : "0"))
+      .join("")}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const page = story.getStoryPage(node.page, node.flags, []);
+    assert.ok(page, `page ${node.page} should exist`);
+    reachablePages.add(node.page);
+    const activeFlags = page.visitSets
+      ? { ...node.flags, ...page.visitSets }
+      : node.flags;
+
+    for (const choice of page.choices) {
+      if (!story.requirementsMet(choice.requires, activeFlags)) continue;
+      let nextFlags = choice.restart
+        ? { ...story.INITIAL_FLAGS }
+        : { ...activeFlags, ...(choice.set ?? {}) };
+      const target = story.getStoryPage(choice.page, nextFlags, []);
+      if (!target) {
+        brokenLinks.push(`${node.page} -> ${choice.page}: ${choice.label}`);
+        continue;
+      }
+      if (target.visitSets) {
+        nextFlags = { ...nextFlags, ...target.visitSets };
+      }
+      if (choice.ending) reachedEndings.add(choice.ending);
+      queue.push({ page: choice.page, flags: nextFlags });
+    }
+  }
+
+  assert.deepEqual(brokenLinks, []);
+  assert.deepEqual(
+    [...reachablePages].sort((left, right) => left - right),
+    [...new Set(pageNumbers)].sort((left, right) => left - right),
+  );
+  assert.deepEqual(
+    [...reachedEndings].sort(),
+    Object.keys(story.ENDING_LABELS).sort(),
+  );
 });

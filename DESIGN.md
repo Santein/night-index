@@ -39,10 +39,12 @@ The full teletext palette uses black, red, green, yellow, blue, magenta, cyan, a
 ## Components
 
 - Intro: title, premise, one primary tuning action, sound preference.
-- Teletext screen: page header, section, title, packet-rendered rows, four color links, receiver footer.
-- Remote panel: three-digit keypad, current quick links, Reveal, Hold, and Size.
+- Teletext screen: page header, section, title, current goal, packet-rendered rows, four action links, consequence-confirmation prompt, receiver footer.
+- Remote panel: current goal, evidence count, three-digit keypad, described action links, Reveal, Case Notes, and Size.
 - Settings panel: sound, sound captions, reduced motion, reduced flashing, keyboard reference, credits.
 - Status line: current page and concise receiver feedback.
+
+Major decisions and endings use a two-step interaction: the first selection previews the known consequence, and the second commits. Navigation links remain immediate. Locked actions keep their descriptive labels visible and explain which evidence or commitment is missing.
 
 ## Motion and Signal
 

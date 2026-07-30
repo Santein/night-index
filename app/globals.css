@@ -462,6 +462,35 @@ button:disabled {
   cursor: pointer;
 }
 
+.case-brief {
+  margin-bottom: 0.85rem;
+  padding: 0.7rem;
+  background: oklch(0.11 0.018 270);
+}
+
+.case-brief p {
+  margin: 0 0 0.28rem;
+  color: var(--cyan);
+  font-family: "Teletext50", monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.case-brief strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.case-brief span {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--yellow);
+  font-family: "Teletext50", monospace;
+  font-size: 0.7rem;
+}
+
 .number-pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -542,9 +571,24 @@ button:disabled {
   color: var(--link-color);
 }
 
-.remote-link span {
+.remote-link__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.remote-link__copy > span {
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.remote-link__copy small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .remote-link strong {

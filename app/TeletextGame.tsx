@@ -10,10 +10,11 @@ import {
 import { NightAudio } from "./audio";
 import { TeletextScene } from "./scene-controller";
 import {
+  CORE_EVIDENCE_FLAGS,
   ENDING_LABELS,
-  ENDING_REQUIREMENTS,
   getStoryPage,
   INITIAL_FLAGS,
+  PAGE_REQUIREMENTS,
   requirementsMet,
   type EndingId,
   type StoryFlags,
@@ -61,7 +62,7 @@ export function TeletextGame() {
   const [currentPageNumber, setCurrentPageNumber] = useState(100);
   const [flags, setFlags] = useState<StoryFlags>({ ...INITIAL_FLAGS });
   const [endings, setEndings] = useState<EndingId[]>([]);
-  const [selectedChoice, setSelectedChoice] = useState(0);
+  const [selectedChoice, setSelectedChoice] = useState(-1);
   const [pageEntry, setPageEntry] = useState("");
   const [revealed, setRevealed] = useState(false);
   const [hold, setHold] = useState(false);
@@ -199,7 +200,15 @@ export function TeletextGame() {
     ) => {
       if (isTuningRef.current) return;
 
-      const directRequirements = ENDING_REQUIREMENTS[targetPage];
+      if (!authorized && PAGE_ENDINGS[targetPage]) {
+        showUnavailablePage(
+          targetPage,
+          "Choose and confirm this ending on page 160.",
+        );
+        return;
+      }
+
+      const directRequirements = PAGE_REQUIREMENTS[targetPage];
       if (
         !authorized &&
         directRequirements &&
@@ -207,7 +216,9 @@ export function TeletextGame() {
       ) {
         showUnavailablePage(
           targetPage,
-          "The page exists, but the record is incomplete.",
+          targetPage === 160
+            ? "Speak to Mara on page 150 before choosing an ending."
+            : "That result requires a decision on its preceding page.",
         );
         return;
       }
@@ -245,8 +256,8 @@ export function TeletextGame() {
       setPageEntry("");
       setRevealed(false);
       setHold(false);
-      setSelectedChoice(0);
-      selectedChoiceRef.current = 0;
+      setSelectedChoice(-1);
+      selectedChoiceRef.current = -1;
       sceneRef.current?.setEntry("");
       sceneRef.current?.showSearch(code);
       audioRef.current?.cue("page");
@@ -257,7 +268,9 @@ export function TeletextGame() {
         flagsRef.current = { ...nextFlags };
         setCurrentPageNumber(targetPage);
         pageNumberRef.current = targetPage;
-        setStatus(`${destination.section}, page ${code}.`);
+        setStatus(
+          destination.objective ?? `${destination.section}, page ${code}.`,
+        );
         setIsTuning(false);
         isTuningRef.current = false;
       }, reducedMotion ? 80 : 520);
@@ -269,6 +282,28 @@ export function TeletextGame() {
     const page = currentPageRef.current;
     const item = page.choices[index];
     if (!item || isTuningRef.current) return;
+
+    const requiresConfirmation =
+      item.kind === "decision" || item.kind === "ending";
+    if (requiresConfirmation && selectedChoiceRef.current !== index) {
+      const unlocked = requirementsMet(item.requires, flagsRef.current);
+      selectedChoiceRef.current = index;
+      setSelectedChoice(index);
+      sceneRef.current?.setSelection(index);
+      setStatus(
+        `${item.kind === "ending" ? "Ending" : "Decision"} preview: ${
+          item.detail ?? item.label
+        } ${
+          unlocked
+            ? "Choose it again to commit."
+            : `Unavailable: ${
+                item.lockedMessage ?? "The required record is incomplete."
+              }`
+        }`,
+      );
+      audioRef.current?.cue("relay");
+      return;
+    }
 
     if (!requirementsMet(item.requires, flagsRef.current)) {
       const message =
@@ -354,6 +389,11 @@ export function TeletextGame() {
   }, []);
 
   const toggleReveal = useCallback(() => {
+    if (!currentPageRef.current.hidden?.length) {
+      setStatus("This page has no concealed clue.");
+      audioRef.current?.cue("locked");
+      return;
+    }
     setRevealed((previous) => {
       const next = !previous;
       revealedRef.current = next;
@@ -402,7 +442,7 @@ export function TeletextGame() {
       setReadyForPage(true);
       isTuningRef.current = false;
       setIsTuning(false);
-      setStatus("Night Index, page 100.");
+      setStatus("Find proof before the 02:17 siren.");
     }, reducedMotion ? 100 : 780);
   }, [reducedMotion]);
 
@@ -630,6 +670,8 @@ export function TeletextGame() {
         if (pageEntryRef.current) {
           const requested = Number(pageEntryRef.current);
           tuneRef.current(requested, flagsRef.current, false);
+        } else if (selectedChoiceRef.current < 0) {
+          setStatus("Select an action first.");
         } else {
           chooseRef.current(selectedChoiceRef.current);
         }
@@ -641,10 +683,26 @@ export function TeletextGame() {
         const count = currentPageRef.current.choices.length;
         if (!count) return;
         const direction = event.key === "ArrowDown" ? 1 : -1;
-        const next = (selectedChoiceRef.current + direction + count) % count;
+        const next =
+          selectedChoiceRef.current < 0
+            ? direction > 0
+              ? 0
+              : count - 1
+            : (selectedChoiceRef.current + direction + count) % count;
         selectedChoiceRef.current = next;
         setSelectedChoice(next);
         sceneRef.current?.setSelection(next);
+        const item = currentPageRef.current.choices[next];
+        const unlocked = requirementsMet(item.requires, flagsRef.current);
+        setStatus(
+          unlocked
+            ? `Selected: ${item.label}. ${
+                item.detail ?? "Press Enter to continue."
+              }`
+            : `Unavailable: ${
+                item.lockedMessage ?? "The required record is incomplete."
+              }`,
+        );
         return;
       }
 
@@ -654,6 +712,9 @@ export function TeletextGame() {
       } else if (event.key.toLowerCase() === "h") {
         event.preventDefault();
         toggleHold();
+      } else if (event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        tuneRef.current(151, flagsRef.current, false);
       } else if (event.key.toLowerCase() === "z") {
         event.preventDefault();
         toggleFocus();
@@ -677,6 +738,9 @@ export function TeletextGame() {
 
   const visibleChoices = currentPage.choices.slice(0, 4);
   const pageCode = currentPage.page.toString().padStart(3, "0");
+  const coreEvidenceCount = CORE_EVIDENCE_FLAGS.filter(
+    (flag) => flags[flag],
+  ).length;
 
   return (
     <main
@@ -708,7 +772,6 @@ export function TeletextGame() {
         {started && (
           <div className="top-actions">
             <button
-              ref={remoteTriggerRef}
               type="button"
               className="quiet-button"
               onClick={toggleFocus}
@@ -718,7 +781,7 @@ export function TeletextGame() {
               {focus ? "Step back" : "Focus screen"}
             </button>
             <button
-              ref={settingsTriggerRef}
+              ref={remoteTriggerRef}
               type="button"
               className="quiet-button"
               onClick={() => {
@@ -732,6 +795,7 @@ export function TeletextGame() {
               {remoteOpen ? "Close remote" : "Open remote"}
             </button>
             <button
+              ref={settingsTriggerRef}
               type="button"
               className="quiet-button icon-button"
               onClick={() => {
@@ -759,9 +823,10 @@ export function TeletextGame() {
           <h1 id="game-title">Night Index</h1>
           <p className="intro-panel__subtitle">The Quiet Forecast</p>
           <p className="intro-panel__copy">
-            Your television has found a station that was never allocated. Follow
-            the page numbers, preserve what the town erased, and choose what the
-            signal will remember.
+            In 1988, Bellwether erased a young television editor named Mara
+            Venn. Tonight she has four minutes of broadcast left. Investigate
+            what happened, choose which evidence to preserve, then decide what
+            the town will remember at dawn.
           </p>
           <button
             type="button"
@@ -842,6 +907,14 @@ export function TeletextGame() {
               </button>
             </div>
 
+            <div className="case-brief">
+              <p>Current goal</p>
+              <strong>
+                {currentPage.objective ?? "Follow the broadcast to the next page."}
+              </strong>
+              <span>Core evidence: {coreEvidenceCount}/4</span>
+            </div>
+
             <div className="number-pad" aria-label="Page number keypad">
               {keypad.map((key) => (
                 <button
@@ -879,17 +952,36 @@ export function TeletextGame() {
                   <button
                     type="button"
                     key={`${item.page}-${item.label}`}
-                    className={`remote-link remote-link--${item.color}`}
+                    className={[
+                      "remote-link",
+                      `remote-link--${item.color}`,
+                      unlocked ? "" : "is-locked",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                     onClick={() => selectChoice(index)}
                     aria-disabled={!unlocked}
                     aria-current={selectedChoice === index ? "true" : undefined}
                     data-testid={`choice-${index}`}
                   >
-                    <span>
-                      <span className="selection-mark" aria-hidden="true">
-                        {selectedChoice === index ? "▸" : " "}
+                    <span className="remote-link__copy">
+                      <span>
+                        <span className="selection-mark" aria-hidden="true">
+                          {selectedChoice === index ? "▸" : " "}
+                        </span>
+                        {item.label}
                       </span>
-                      {unlocked ? item.label : `Locked page ${item.page}`}
+                      {(unlocked ? item.detail : item.lockedMessage ?? item.detail) && (
+                        <small>
+                          {unlocked
+                            ? item.detail
+                            : item.lockedMessage ?? item.detail}
+                          {selectedChoice === index &&
+                          (item.kind === "decision" || item.kind === "ending")
+                            ? " Choose again to commit."
+                            : ""}
+                        </small>
+                      )}
                     </span>
                     <strong>{item.page}</strong>
                   </button>
@@ -898,14 +990,23 @@ export function TeletextGame() {
             </nav>
 
             <div className="remote-functions">
-              <button type="button" onClick={toggleReveal} aria-pressed={revealed}>
-                Reveal
+              <button
+                type="button"
+                onClick={toggleReveal}
+                aria-pressed={revealed}
+                disabled={!currentPage.hidden?.length || isTuning}
+              >
+                Reveal clue
               </button>
-              <button type="button" onClick={toggleHold} aria-pressed={hold}>
-                Hold
+              <button
+                type="button"
+                onClick={() => tuneRef.current(151, flagsRef.current, false)}
+                disabled={isTuning}
+              >
+                Case notes
               </button>
               <button type="button" onClick={toggleFocus} aria-pressed={focus}>
-                Size
+                Screen size
               </button>
             </div>
           </aside>
@@ -1013,6 +1114,10 @@ export function TeletextGame() {
         <h2>
           Page {pageCode}: {currentPage.title}
         </h2>
+        <p>
+          Current goal:{" "}
+          {currentPage.objective ?? "Follow the broadcast to the next page."}
+        </p>
         {currentPage.body.map((line, index) => (
           <p key={`${line}-${index}`}>{line}</p>
         ))}
@@ -1028,8 +1133,10 @@ export function TeletextGame() {
               <li key={`transcript-${item.page}-${item.label}`}>
                 {selectedChoice === index ? "Selected. " : ""}
                 {unlocked
-                  ? `${item.label}, page ${item.page}.`
-                  : `Locked page ${item.page}.`}
+                  ? `${item.label}, page ${item.page}. ${item.detail ?? ""}`
+                  : `${item.label}, page ${item.page}. Unavailable. ${
+                      item.lockedMessage ?? item.detail ?? ""
+                    }`}
               </li>
             );
           })}

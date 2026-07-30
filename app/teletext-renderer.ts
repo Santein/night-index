@@ -176,6 +176,8 @@ function drawChoiceRow(
     ctx.globalAlpha = 1;
   }
 
+  drawCellText(ctx, active ? ">" : " ", row, color, 2, 27, 1);
+
   ctx.fillStyle = color;
   ctx.fillRect(
     CELL_WIDTH,
@@ -186,13 +188,14 @@ function drawChoiceRow(
 
   drawCellText(
     ctx,
-    unlocked ? item.label : `LOCKED ${item.page}`,
+    item.label,
     row,
     unlocked ? palette.white : palette.dim,
     4,
     27,
-    35,
+    27,
   );
+  drawCellText(ctx, `P${item.page}`, row, color, 34, 25, 5);
 }
 
 function drawParityErrors(
@@ -258,6 +261,18 @@ export function drawTeletextPage(
     drawCellText(ctx, page.title, 2, palette.white, 2, 29, 36);
   }
 
+  if (state.visibleRows >= 3) {
+    drawCellText(
+      ctx,
+      `GOAL: ${page.objective ?? "FOLLOW THE BROADCAST"}`,
+      3,
+      palette.yellow,
+      1,
+      22,
+      39,
+    );
+  }
+
   body.forEach((line, index) => {
     const row = bodyStart + index;
     if (row > state.visibleRows) return;
@@ -274,6 +289,28 @@ export function drawTeletextPage(
   });
 
   const regions: ChoiceRegion[] = [];
+  const promptRow = choiceStart - 1;
+  if (promptRow <= state.visibleRows) {
+    const selectedItem =
+      state.selectedChoice >= 0
+        ? page.choices[state.selectedChoice]
+        : undefined;
+    const prompt =
+      selectedItem &&
+      (selectedItem.kind === "decision" || selectedItem.kind === "ending")
+        ? `CONFIRM ${selectedItem.label}? CHOOSE AGAIN`
+        : (page.prompt ?? "CHOOSE YOUR NEXT ACTION:");
+    drawCellText(
+      ctx,
+      prompt,
+      promptRow,
+      palette.cyan,
+      1,
+      22,
+      38,
+    );
+  }
+
   for (let index = 0; index < choicesCount; index += 1) {
     const row = choiceStart + index;
     regions.push({
@@ -290,7 +327,9 @@ export function drawTeletextPage(
   ctx.fillRect(0, CELL_HEIGHT * 23, TELETEXT_WIDTH, CELL_HEIGHT);
   drawCellText(
     ctx,
-    `P${page.page}  R REVEAL  H HOLD  Z SIZE`,
+    `P${page.page}  ${
+      page.hidden?.length ? "R REVEAL  " : ""
+    }N NOTES  Z SIZE`,
     23,
     palette.yellow,
     1,
