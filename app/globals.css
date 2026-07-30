@@ -483,14 +483,6 @@ button:disabled {
   line-height: 1.4;
 }
 
-.case-brief span {
-  display: block;
-  margin-top: 0.45rem;
-  color: var(--yellow);
-  font-family: "Teletext50", monospace;
-  font-size: 0.7rem;
-}
-
 .number-pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

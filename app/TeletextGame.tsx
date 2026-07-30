@@ -10,7 +10,6 @@ import {
 import { NightAudio } from "./audio";
 import { TeletextScene } from "./scene-controller";
 import {
-  CORE_EVIDENCE_FLAGS,
   ENDING_LABELS,
   getStoryPage,
   INITIAL_FLAGS,
@@ -217,8 +216,8 @@ export function TeletextGame() {
         showUnavailablePage(
           targetPage,
           targetPage === 160
-            ? "Speak to Mara on page 150 before choosing an ending."
-            : "That result requires a decision on its preceding page.",
+            ? "The red lamp stays dark until Mara answers on page 150."
+            : "That page has no signal until its preceding choice is made.",
         );
         return;
       }
@@ -291,14 +290,10 @@ export function TeletextGame() {
       setSelectedChoice(index);
       sceneRef.current?.setSelection(index);
       setStatus(
-        `${item.kind === "ending" ? "Ending" : "Decision"} preview: ${
-          item.detail ?? item.label
-        } ${
+        `${item.detail ?? item.label} ${
           unlocked
             ? "Choose it again to commit."
-            : `Unavailable: ${
-                item.lockedMessage ?? "The required record is incomplete."
-              }`
+            : item.lockedMessage ?? "The signal is incomplete."
         }`,
       );
       audioRef.current?.cue("relay");
@@ -306,8 +301,7 @@ export function TeletextGame() {
     }
 
     if (!requirementsMet(item.requires, flagsRef.current)) {
-      const message =
-        item.lockedMessage ?? "Instruction incomplete. The fog waits.";
+      const message = item.lockedMessage ?? "The signal breaks before that page.";
       setStatus(message);
       sceneRef.current?.setAlert(message);
       audioRef.current?.cue("locked");
@@ -442,7 +436,7 @@ export function TeletextGame() {
       setReadyForPage(true);
       isTuningRef.current = false;
       setIsTuning(false);
-      setStatus("Find proof before the 02:17 siren.");
+      setStatus("At 02:17, the forecast will choose a name.");
     }, reducedMotion ? 100 : 780);
   }, [reducedMotion]);
 
@@ -699,9 +693,7 @@ export function TeletextGame() {
             ? `Selected: ${item.label}. ${
                 item.detail ?? "Press Enter to continue."
               }`
-            : `Unavailable: ${
-                item.lockedMessage ?? "The required record is incomplete."
-              }`,
+            : item.lockedMessage ?? "The signal breaks before that page.",
         );
         return;
       }
@@ -738,10 +730,6 @@ export function TeletextGame() {
 
   const visibleChoices = currentPage.choices.slice(0, 4);
   const pageCode = currentPage.page.toString().padStart(3, "0");
-  const coreEvidenceCount = CORE_EVIDENCE_FLAGS.filter(
-    (flag) => flags[flag],
-  ).length;
-
   return (
     <main
       className={[
@@ -823,10 +811,10 @@ export function TeletextGame() {
           <h1 id="game-title">Night Index</h1>
           <p className="intro-panel__subtitle">The Quiet Forecast</p>
           <p className="intro-panel__copy">
-            In 1988, Bellwether erased a young television editor named Mara
-            Venn. Tonight she has four minutes of broadcast left. Investigate
-            what happened, choose which evidence to preserve, then decide what
-            the town will remember at dawn.
+            At 02:13, a local television station begins printing the name of a
+            woman Bellwether no longer remembers. Her pages lead through seven
+            missing autumns and into the room around you. Before the siren, the
+            last page will ask what you are willing to leave in the signal.
           </p>
           <button
             type="button"
@@ -908,11 +896,10 @@ export function TeletextGame() {
             </div>
 
             <div className="case-brief">
-              <p>Current goal</p>
+              <p>Signal note</p>
               <strong>
-                {currentPage.objective ?? "Follow the broadcast to the next page."}
+                {currentPage.objective ?? "The broadcast is still changing."}
               </strong>
-              <span>Core evidence: {coreEvidenceCount}/4</span>
             </div>
 
             <div className="number-pad" aria-label="Page number keypad">
@@ -948,6 +935,10 @@ export function TeletextGame() {
             <nav className="remote-links" aria-label="Current page links">
               {visibleChoices.map((item, index) => {
                 const unlocked = requirementsMet(item.requires, flags);
+                const choiceDetail = unlocked
+                  ? item.detail
+                  : item.lockedMessage ?? item.detail;
+                const showDetail = selectedChoice === index;
                 return (
                   <button
                     type="button"
@@ -971,11 +962,9 @@ export function TeletextGame() {
                         </span>
                         {item.label}
                       </span>
-                      {(unlocked ? item.detail : item.lockedMessage ?? item.detail) && (
+                      {showDetail && choiceDetail && (
                         <small>
-                          {unlocked
-                            ? item.detail
-                            : item.lockedMessage ?? item.detail}
+                          {choiceDetail}
                           {selectedChoice === index &&
                           (item.kind === "decision" || item.kind === "ending")
                             ? " Choose again to commit."
@@ -1003,7 +992,7 @@ export function TeletextGame() {
                 onClick={() => tuneRef.current(151, flagsRef.current, false)}
                 disabled={isTuning}
               >
-                Case notes
+                Receiver memory
               </button>
               <button type="button" onClick={toggleFocus} aria-pressed={focus}>
                 Screen size
@@ -1095,7 +1084,7 @@ export function TeletextGame() {
               <strong>Keyboard</strong>
               <p>
                 0–9 page, Enter tune, arrows select, R reveal, H hold, Z size,
-                M sound, Esc step back.
+                N memory, M sound, Esc step back.
               </p>
             </div>
 
@@ -1115,8 +1104,8 @@ export function TeletextGame() {
           Page {pageCode}: {currentPage.title}
         </h2>
         <p>
-          Current goal:{" "}
-          {currentPage.objective ?? "Follow the broadcast to the next page."}
+          Signal note:{" "}
+          {currentPage.objective ?? "The broadcast is still changing."}
         </p>
         {currentPage.body.map((line, index) => (
           <p key={`${line}-${index}`}>{line}</p>

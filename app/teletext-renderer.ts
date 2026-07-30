@@ -264,7 +264,7 @@ export function drawTeletextPage(
   if (state.visibleRows >= 3) {
     drawCellText(
       ctx,
-      `GOAL: ${page.objective ?? "FOLLOW THE BROADCAST"}`,
+      page.objective ?? "THE BROADCAST IS STILL CHANGING",
       3,
       palette.yellow,
       1,
@@ -329,7 +329,7 @@ export function drawTeletextPage(
     ctx,
     `P${page.page}  ${
       page.hidden?.length ? "R REVEAL  " : ""
-    }N NOTES  Z SIZE`,
+    }N MEMORY  Z SIZE`,
     23,
     palette.yellow,
     1,
