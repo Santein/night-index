@@ -239,6 +239,13 @@ button:disabled {
   text-wrap: pretty;
 }
 
+.intro-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
 .tune-button {
   display: inline-flex;
   min-height: 3.25rem;
@@ -265,6 +272,52 @@ button:disabled {
 
 .tune-button span {
   font-size: 1.15rem;
+}
+
+.viewer-notice-toggle {
+  min-height: 3.25rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid oklch(0.75 0.06 205 / 0.68);
+  border-radius: 3px;
+  background: oklch(0.1 0.015 260 / 0.78);
+  color: var(--cyan);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease-out,
+    background-color 180ms ease-out,
+    color 180ms ease-out;
+}
+
+.viewer-notice-toggle:hover {
+  border-color: var(--cyan);
+  background: oklch(0.16 0.025 260 / 0.9);
+  color: var(--ink);
+}
+
+.viewer-notice {
+  max-width: 48ch;
+  margin-top: 1rem;
+  padding: 0.9rem 1rem 0.95rem;
+  border-top: 1px solid oklch(0.75 0.06 205 / 0.75);
+  border-bottom: 1px solid oklch(0.75 0.06 205 / 0.34);
+  background: oklch(0.09 0.012 260 / 0.78);
+  color: oklch(0.89 0.025 90);
+  font-size: 0.87rem;
+  line-height: 1.5;
+}
+
+.viewer-notice p {
+  margin: 0;
+}
+
+.viewer-notice p + p {
+  margin-top: 0.65rem;
+}
+
+.viewer-notice__detail {
+  color: var(--muted);
 }
 
 .intro-panel__notes {
@@ -771,6 +824,16 @@ button:disabled {
     min-height: 3rem;
   }
 
+  .viewer-notice-toggle {
+    min-height: 3rem;
+  }
+
+  .viewer-notice {
+    margin-top: 0.8rem;
+    font-size: 0.8rem;
+    line-height: 1.42;
+  }
+
   .intro-panel__notes {
     display: none;
   }
@@ -841,6 +904,10 @@ button:disabled {
   }
 
   .tune-button {
+    min-height: 2.8rem;
+  }
+
+  .viewer-notice-toggle {
     min-height: 2.8rem;
   }
 }

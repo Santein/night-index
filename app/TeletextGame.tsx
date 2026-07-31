@@ -55,6 +55,7 @@ export function TeletextGame() {
   const captionTimerRef = useRef<number | null>(null);
 
   const [started, setStarted] = useState(false);
+  const [viewerNoticeOpen, setViewerNoticeOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [readyForPage, setReadyForPage] = useState(false);
   const [isTuning, setIsTuning] = useState(false);
@@ -812,19 +813,49 @@ export function TeletextGame() {
           <p className="intro-panel__subtitle">The Quiet Forecast</p>
           <p className="intro-panel__copy">
             At 02:13, a local television station begins printing the name of a
-            woman Bellwether no longer remembers. Her pages lead through seven
-            missing autumns and into the room around you. Before the siren, the
-            last page will ask what you are willing to leave in the signal.
+            woman Bellwether no longer remembers. Tune its numbered pages to
+            trace seven missing autumns and make the last choice before the
+            02:17 siren changes the room around you.
           </p>
-          <button
-            type="button"
-            className="tune-button"
-            onClick={() => void beginExperience()}
-            data-testid="start-game"
-          >
-            Tune channel 7
-            <span aria-hidden="true">↗</span>
-          </button>
+          <div className="intro-panel__actions">
+            <button
+              type="button"
+              className="tune-button"
+              onClick={() => void beginExperience()}
+              data-testid="start-game"
+            >
+              Tune channel 7
+              <span aria-hidden="true">↗</span>
+            </button>
+            <button
+              type="button"
+              className="viewer-notice-toggle"
+              onClick={() => setViewerNoticeOpen((open) => !open)}
+              aria-expanded={viewerNoticeOpen}
+              aria-controls="viewer-notice"
+            >
+              {viewerNoticeOpen
+                ? "Close viewer notice"
+                : "Read viewer notice"}
+            </button>
+          </div>
+          {viewerNoticeOpen && (
+            <div id="viewer-notice" className="viewer-notice">
+              <p>
+                Night Index is a short, single-player horror story told through
+                an impossible local teletext broadcast.
+              </p>
+              <p>
+                Use the remote or keyboard to tune printed page numbers, follow
+                Mara Venn&apos;s traces, and decide which memory survives the 02:17
+                siren.
+              </p>
+              <p className="viewer-notice__detail">
+                Your choices persist in later broadcasts. The receiver holds
+                four possible mornings.
+              </p>
+            </div>
+          )}
           <div className="intro-panel__notes">
             <span>15–25 minutes</span>
             <span>Headphones recommended</span>
