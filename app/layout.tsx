@@ -1,69 +1,74 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import "./globals.css";
+import { sitePath } from "./site-path";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const forwardedHost = requestHeaders.get("x-forwarded-host");
-  const rawHost = forwardedHost ?? requestHeaders.get("host") ?? "localhost:3000";
-  const host = rawHost.split(",")[0].trim();
-  const forwardedProtocol = requestHeaders.get("x-forwarded-proto");
-  const protocol =
-    forwardedProtocol?.split(",")[0].trim() ??
-    (host.startsWith("localhost") ? "http" : "https");
-  const metadataBase = new URL(`${protocol}://${host}`);
-  const description =
-    "At 02:13, an impossible teletext broadcast asks what the town should remember.";
+const siteOrigin =
+  process.env.NEXT_PUBLIC_SITE_ORIGIN ??
+  "https://night-index-quiet-forecast.santein.chatgpt.site";
+const description =
+  "At 02:13, an impossible teletext broadcast asks what the town should remember.";
 
-  return {
-    metadataBase,
-    title: {
-      default: "Night Index: The Quiet Forecast",
-      template: "%s | Night Index",
-    },
+export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin),
+  title: {
+    default: "Night Index: The Quiet Forecast",
+    template: "%s | Night Index",
+  },
+  description,
+  icons: {
+    icon: sitePath("/favicon.svg"),
+    shortcut: sitePath("/favicon.svg"),
+  },
+  applicationName: "Night Index",
+  category: "game",
+  keywords: [
+    "interactive fiction",
+    "horror game",
+    "teletext",
+    "Three.js",
+    "branching story",
+  ],
+  openGraph: {
+    title: "Night Index: The Quiet Forecast",
     description,
-    icons: {
-      icon: "/favicon.svg",
-      shortcut: "/favicon.svg",
-    },
-    applicationName: "Night Index",
-    category: "game",
-    keywords: [
-      "interactive fiction",
-      "horror game",
-      "teletext",
-      "Three.js",
-      "branching story",
+    type: "website",
+    images: [
+      {
+        url: sitePath("/og.png"),
+        width: 1731,
+        height: 909,
+        alt: "A vintage television glowing with the Night Index teletext broadcast in a dark motel room.",
+      },
     ],
-    openGraph: {
-      title: "Night Index: The Quiet Forecast",
-      description,
-      type: "website",
-      images: [
-        {
-          url: "/og.png",
-          width: 1731,
-          height: 909,
-          alt: "A vintage television glowing with the Night Index teletext broadcast in a dark motel room.",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "Night Index: The Quiet Forecast",
-      description,
-      images: ["/og.png"],
-    },
-  };
-}
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Night Index: The Quiet Forecast",
+    description,
+    images: [sitePath("/og.png")],
+  },
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const teletextFontUrl = sitePath("/fonts/Teletext50.otf");
+
   return (
     <html lang="en">
+      <head>
+        <style>{`
+          @font-face {
+            font-family: "Teletext50";
+            src: url("${teletextFontUrl}") format("opentype");
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+          }
+        `}</style>
+      </head>
       <body>{children}</body>
     </html>
   );

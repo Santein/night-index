@@ -4,6 +4,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { sitePath } from "./site-path";
 import { INITIAL_FLAGS, type StoryFlags, type StoryPage } from "./story";
 import {
   drawBootScreen,
@@ -959,14 +960,14 @@ export class TeletextScene {
 
     try {
       const detailed = await loader.loadAsync(
-        "/models/television/Television_01_1k.gltf",
+        sitePath("/models/television/Television_01_1k.gltf"),
       );
       model = detailed.scene;
     } catch {
       if (this.disposed) return;
       try {
         const fallback = await loader.loadAsync(
-          "/models/television/television-vintage.glb",
+          sitePath("/models/television/television-vintage.glb"),
         );
         model = fallback.scene;
       } catch {

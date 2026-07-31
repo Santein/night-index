@@ -1,13 +1,5 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Teletext50";
-  src: url("/fonts/Teletext50.otf") format("opentype");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
 :root {
   --black: oklch(0.07 0 0);
   --near-black: oklch(0.105 0.012 270);
