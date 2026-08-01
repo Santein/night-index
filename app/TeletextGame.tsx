@@ -334,7 +334,6 @@ export function TeletextGame() {
       setFocus(false);
       focusRef.current = false;
       sceneRef.current?.setFocus(false);
-      setRemoteOpen(false);
       showCaption("");
     }
 
@@ -605,9 +604,10 @@ export function TeletextGame() {
   useEffect(() => {
     if (!remoteOpen) return;
     const focusFrame = window.requestAnimationFrame(() => {
-      remotePanelRef.current
-        ?.querySelector<HTMLButtonElement>("button")
-        ?.focus();
+      const panel = remotePanelRef.current;
+      if (!panel) return;
+      panel.scrollTop = 0;
+      panel.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(focusFrame);
   }, [remoteOpen]);
@@ -615,9 +615,10 @@ export function TeletextGame() {
   useEffect(() => {
     if (!settingsOpen) return;
     const focusFrame = window.requestAnimationFrame(() => {
-      settingsPanelRef.current
-        ?.querySelector<HTMLButtonElement>("button")
-        ?.focus();
+      const panel = settingsPanelRef.current;
+      if (!panel) return;
+      panel.scrollTop = 0;
+      panel.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(focusFrame);
   }, [settingsOpen]);
@@ -765,9 +766,15 @@ export function TeletextGame() {
               className="quiet-button"
               onClick={toggleFocus}
               aria-pressed={focus}
+              aria-label={focus ? "Step back to room view" : "Focus television screen"}
               data-testid="focus-toggle"
             >
-              {focus ? "Step back" : "Focus screen"}
+              <span className="quiet-button__full">
+                {focus ? "Step back" : "Focus screen"}
+              </span>
+              <span className="quiet-button__compact" aria-hidden="true">
+                {focus ? "Room" : "Focus"}
+              </span>
             </button>
             <button
               ref={remoteTriggerRef}
@@ -781,7 +788,12 @@ export function TeletextGame() {
               aria-controls="remote-panel"
               data-testid="remote-toggle"
             >
-              {remoteOpen ? "Close remote" : "Open remote"}
+              <span className="quiet-button__full">
+                {remoteOpen ? "Close remote" : "Open remote"}
+              </span>
+              <span className="quiet-button__compact" aria-hidden="true">
+                {remoteOpen ? "Close" : "Remote"}
+              </span>
             </button>
             <button
               ref={settingsTriggerRef}
@@ -902,6 +914,8 @@ export function TeletextGame() {
             className={`remote-panel ${remoteOpen ? "is-open" : ""}`}
             aria-label="Teletext remote"
             aria-hidden={!remoteOpen}
+            hidden={!remoteOpen}
+            tabIndex={-1}
           >
             <div className="panel-heading">
               <div>
@@ -1037,6 +1051,8 @@ export function TeletextGame() {
             className={`settings-panel ${settingsOpen ? "is-open" : ""}`}
             aria-label="Game settings"
             aria-hidden={!settingsOpen}
+            hidden={!settingsOpen}
+            tabIndex={-1}
           >
             <div className="panel-heading">
               <div>

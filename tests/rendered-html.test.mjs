@@ -42,8 +42,9 @@ test("server-renders the Night Index game shell", async () => {
 });
 
 test("ships the story, receiver, and licensed local assets", async () => {
-  const [game, story, renderer, packageJson, attribution] = await Promise.all([
+  const [game, styles, story, renderer, packageJson, attribution] = await Promise.all([
     readFile(new URL("../app/TeletextGame.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/story.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/teletext-renderer.ts", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
@@ -62,6 +63,11 @@ test("ships the story, receiver, and licensed local assets", async () => {
   assert.match(game, /Reduced flashing/);
   assert.match(game, /readStoredEndings/);
   assert.match(game, /Choose and confirm this ending on page 160/);
+  assert.match(game, /hidden={!remoteOpen}/);
+  assert.match(game, /panel\.focus\({ preventScroll: true }\)/);
+  assert.match(styles, /height:\s*100dvh/);
+  assert.match(styles, /\.remote-panel,[\s\S]*?position:\s*fixed/);
+  assert.doesNotMatch(styles, /\.game-shell\s*{[^}]*min-height:\s*(?:30|34)rem/s);
   assert.match(story, /quiet-morning/);
   assert.match(story, /borrowed-dawn/);
   assert.match(story, /night-editor/);
